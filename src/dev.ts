@@ -9,10 +9,6 @@ import {
     ClientLogger,
     VoicePlayerSettings,
     AssistantSettings,
-    AssistantCharacterType,
-    AssistantCharacterCommand,
-    AssistantNavigationCommand,
-    AssistantSmartAppCommand,
 } from './typings';
 import { createAudioRecorder } from './createAudioRecorder';
 import { renderAssistantRecordPanel } from './record';
@@ -140,7 +136,6 @@ export const initializeAssistantSDK = ({
     let assistantReady = false; // флаг готовности контекста ассистента
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let state: any = null;
-    let character: AssistantCharacterType;
 
     const createSystemMessageBase = () => {
         return {
@@ -218,10 +213,7 @@ export const initializeAssistantSDK = ({
         if (initPhrase) {
             const res = await vpsClient.sendText(initPhrase);
             appInfo = res?.app_info;
-            if (res?.character) {
-                character = res?.character.id;
-                initialSmartAppData.push({ type: 'character', character: res.character });
-            }
+            res?.character && initialSmartAppData.push({ type: 'character', character: res.character });
 
             for (const item of res?.items || []) {
                 if (item.command != null) {
@@ -298,12 +290,6 @@ export const initializeAssistantSDK = ({
         }
     };
 
-    const emitOnData = (command: AssistantCharacterCommand | AssistantNavigationCommand | AssistantSmartAppCommand) => {
-        if (clientReady && assistantReady && window.AssistantClient?.onData) {
-            window.AssistantClient.onData(command);
-        }
-    };
-
     vpsClient.on('systemMessage', (message, original) => {
         let bubbleText = '';
 
@@ -313,16 +299,13 @@ export const initializeAssistantSDK = ({
             }
 
             if (item.command) {
-                emitOnData({
-                    ...item.command,
-                    sdkMeta: { mid: original.messageId, requestId: requestIdMap[original.messageId.toString()] },
-                });
+                if (clientReady && assistantReady && window.AssistantClient?.onData) {
+                    window.AssistantClient.onData({
+                        ...item.command,
+                        sdkMeta: { mid: original.messageId, requestId: requestIdMap[original.messageId.toString()] },
+                    });
+                }
             }
-        }
-
-        if (message.character && message.character.id !== character) {
-            character = message.character.id;
-            emitOnData({ type: 'character', character: message.character });
         }
 
         updateDevUI(message.suggestions?.buttons ?? [], bubbleText);

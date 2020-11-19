@@ -118,12 +118,10 @@ export interface AssistantActionCommand {
     action: { type: 'deep_link'; deep_link: string };
 }
 
-export type AssistantCharacterType = 'sber' | 'eva' | 'joy';
-
 export interface AssistantCharacterCommand {
     type: 'character';
     character: {
-        id: AssistantCharacterType;
+        id: 'sber' | 'eva' | 'joy';
     };
     sdkMeta?: {
         mid?: number;
@@ -267,7 +265,7 @@ export type SystemMessageDataType = {
         buttons: Array<SuggestionButtonType>;
     };
     character?: {
-        id: AssistantCharacterType;
+        id: 'sber' | 'eva' | 'joy';
     };
     sdk_meta?: {
         requestId?: string;
